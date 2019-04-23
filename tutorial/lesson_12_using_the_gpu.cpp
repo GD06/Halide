@@ -293,8 +293,8 @@ Target find_gpu_target() {
     Target target = get_host_target();
 
     // Uncomment the following lines to try CUDA instead:
-    // target.set_feature(Target::CUDA);
-    // return target;
+    target.set_feature(Target::CUDA);
+    return target;
 
 #ifdef _WIN32
     if (LoadLibraryA("d3d12.dll") != nullptr) {

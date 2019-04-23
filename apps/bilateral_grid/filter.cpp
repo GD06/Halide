@@ -3,6 +3,7 @@
 #include <cassert>
 
 #include "bilateral_grid.h"
+#include "bilateral_grid_gpu.h"
 #ifndef NO_AUTO_SCHEDULE
 #include "bilateral_grid_auto_schedule.h"
 #endif
@@ -24,8 +25,20 @@ int main(int argc, char **argv) {
     float r_sigma = (float) atof(argv[3]);
     int timing_iterations = atoi(argv[4]);
 
-    Buffer<float> input = load_and_convert_image(argv[1]);
+    // Buffer<float> input = load_and_convert_image(argv[1]);
+    printf("Warning: testing performance with input image ignored!\n");
+    const int width = 6408;
+    const int height = 4802;
+    Buffer<float> input(width, height);
+    for (int y = 0; y < input.height(); ++y) {
+        for (int x = 0; x < input.width(); ++x) {
+            input(x, y) =  static_cast<float>(rand()) / RAND_MAX;
+        }
+    }
+
     Buffer<float> output(input.width(), input.height());
+
+    printf("Input image size: %dx%d\n", input.width(), input.height());
 
     bilateral_grid(input, r_sigma, output);
 
@@ -45,6 +58,14 @@ int main(int argc, char **argv) {
     });
     printf("Auto-scheduled time: %gms\n", min_t_auto * 1e3);
     #endif
+
+    bilateral_grid_gpu(input, r_sigma, output);
+
+    double min_t_gpu = benchmark(timing_iterations, 10, [&]() {
+        bilateral_grid_gpu(input, r_sigma, output);
+    });
+    printf("GPU-scheduled time: %gms\n", min_t_gpu * 1e3);
+    output.copy_to_host();
 
     convert_and_save_image(output, argv[2]);
 

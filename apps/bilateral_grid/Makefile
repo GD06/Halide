@@ -14,13 +14,17 @@ $(BIN)/bilateral_grid_auto_schedule.a: $(BIN)/bilateral_grid.generator
 	@mkdir -p $(@D)
 	$^ -g bilateral_grid -o $(BIN) -f bilateral_grid_auto_schedule target=$(HL_TARGET)-no_runtime auto_schedule=true -e static_library,h,schedule
 
+$(BIN)/bilateral_grid_gpu.a: $(BIN)/bilateral_grid.generator 
+	@mkdir -p $(@D)
+	$^ -g bilateral_grid -o $(BIN) -f bilateral_grid_gpu target=cuda auto_schedule=false 
+
 $(BIN)/viz/bilateral_grid.a: $(BIN)/bilateral_grid.generator
 	@mkdir -p $(@D)
 	$^ -g bilateral_grid -o $(BIN)/viz target=$(HL_TARGET)-trace_all
 
-$(BIN)/filter: $(BIN)/bilateral_grid.a $(BIN)/bilateral_grid_auto_schedule.a filter.cpp
+$(BIN)/filter: $(BIN)/bilateral_grid.a $(BIN)/bilateral_grid_auto_schedule.a $(BIN)/bilateral_grid_gpu.a filter.cpp
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) -O3 -ffast-math -Wall -Werror -I$(BIN) filter.cpp $(BIN)/bilateral_grid.a $(BIN)/bilateral_grid_auto_schedule.a -o $@ $(IMAGE_IO_FLAGS) $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -O3 -ffast-math -Wall -Werror -I$(BIN) filter.cpp $(BIN)/bilateral_grid.a $(BIN)/bilateral_grid_auto_schedule.a $(BIN)/bilateral_grid_gpu.a -o $@ $(IMAGE_IO_FLAGS) $(LDFLAGS)
 
 $(BIN)/filter_viz: $(BIN)/viz/bilateral_grid.a filter.cpp ../../bin/HalideTraceViz
 	@mkdir -p $(@D)
