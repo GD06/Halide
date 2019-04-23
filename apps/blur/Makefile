@@ -8,7 +8,7 @@ $(BIN)/halide_blur.generator: halide_blur_generator.cpp $(GENERATOR_DEPS)
 
 $(BIN)/%/halide_blur.a: $(BIN)/halide_blur.generator
 	@mkdir -p $(@D)
-	$^ -g halide_blur -o $(BIN)/$* target=$(HL_TARGET)
+	$^ -g halide_blur -o $(BIN)/$* target=cuda 
 
 # g++ on OS X might actually be system clang without openmp
 CXX_VERSION=$(shell $(CXX) --version)
