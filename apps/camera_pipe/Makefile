@@ -2,7 +2,7 @@ include ../support/Makefile.inc
 
 all: $(BIN)/process
 
-TIMING_ITERATIONS ?= 5
+TIMING_ITERATIONS ?= 10
 
 $(BIN)/camera_pipe.generator: camera_pipe_generator.cpp $(GENERATOR_DEPS)
 	@mkdir -p $(@D)
@@ -16,11 +16,15 @@ $(BIN)/camera_pipe_auto_schedule.a: $(BIN)/camera_pipe.generator
 	@mkdir -p $(@D)
 	$^ -g camera_pipe -o $(BIN) -f camera_pipe_auto_schedule target=$(HL_TARGET)-no_runtime auto_schedule=true
 
+$(BIN)/camera_pipe_cuda.a: $(BIN)/camera_pipe.generator 
+	@mkdir -p $(@D)
+	$^ -g camera_pipe -o $(BIN) -f camera_pipe_cuda target=cuda auto_schedule=false  
+
 $(BIN)/viz/camera_pipe.a: $(BIN)/camera_pipe.generator
 	@mkdir -p $(@D)
 	$^ -g camera_pipe -o $(BIN)/viz target=$(HL_TARGET)-trace_all
 
-$(BIN)/process: process.cpp $(BIN)/camera_pipe.a $(BIN)/camera_pipe_auto_schedule.a
+$(BIN)/process: process.cpp $(BIN)/camera_pipe.a $(BIN)/camera_pipe_auto_schedule.a $(BIN)/camera_pipe_cuda.a 
 	$(CXX) $(CXXFLAGS) -Wall -O3 -I$(BIN) $^ -o $@ $(IMAGE_IO_FLAGS) $(LDFLAGS)
 
 $(BIN)/viz/process: process.cpp $(BIN)/viz/camera_pipe.a

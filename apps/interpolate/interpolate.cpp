@@ -76,7 +76,12 @@ int main(int argc, char **argv) {
     std::cout << "Finished function setup." << std::endl;
 
     int sched;
-    Target target = get_target_from_environment();
+    //Target target = get_target_from_environment();
+    
+    printf("WARNING: Enforce the profiling running on GPU!\n");
+    Target target = get_host_target();
+    target.set_feature(Target::CUDA);
+
     if (target.has_gpu_feature()) {
         sched = 4;
     } else {
@@ -206,7 +211,19 @@ int main(int argc, char **argv) {
     // JIT compile the pipeline eagerly, so we don't interfere with timing
     normalize.compile_jit(target);
 
-    Buffer<float> in_png = Tools::load_and_convert_image(argv[1]);
+    Buffer<float> in_png_tmp = Tools::load_and_convert_image(argv[1]);
+    Buffer<float> in_png(in_png_tmp.width() * 2, in_png_tmp.height() * 2, 4);
+
+    for (int y = 0; y < in_png.height(); ++y) {
+        for (int x = 0; x < in_png.width(); ++x) {
+            for (int c = 0; c < 4; ++c) {
+                in_png(x, y, c) = in_png_tmp(x % in_png_tmp.width(),
+                        y % in_png_tmp.height(), c);
+            }
+        }
+    }
+    printf("Input image size: %dx%d\n", in_png.width(), in_png.height());
+
     Buffer<float> out(in_png.width(), in_png.height(), 3);
     assert(in_png.channels() == 4);
     input.set(in_png);

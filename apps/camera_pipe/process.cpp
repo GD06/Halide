@@ -1,6 +1,7 @@
 #include "halide_benchmark.h"
 
 #include "camera_pipe.h"
+#include "camera_pipe_cuda.h"
 #ifndef NO_AUTO_SCHEDULE
 #include "camera_pipe_auto_schedule.h"
 #endif
@@ -29,7 +30,15 @@ int main(int argc, char **argv) {
 #endif
 
     fprintf(stderr, "input: %s\n", argv[1]);
-    Buffer<uint16_t> input = load_and_convert_image(argv[1]);
+    Buffer<uint16_t> input_tmp = load_and_convert_image(argv[1]);
+    Buffer<uint16_t> input(input_tmp.width() * 2, input_tmp.height() * 2);
+
+    for (int y = 0; y < input.height(); ++y) {
+        for (int x = 0; x < input.width(); ++x) {
+            input(x, y) = input_tmp(x % input_tmp.width(), y % input_tmp.height());
+        }
+    }
+
     fprintf(stderr, "       %d %d\n", input.width(), input.height());
     Buffer<uint8_t> output(((input.width() - 32)/32)*32, ((input.height() - 24)/32)*32, 3);
 
@@ -83,6 +92,14 @@ int main(int argc, char **argv) {
         });
     fprintf(stderr, "Halide (auto):\t%gus\n", best * 1e6);
     #endif
+
+    best = benchmark(timing_iterations, 1, [&]() {
+            camera_pipe_cuda(input, matrix_3200, matrix_7000,
+                             color_temp, gamma, contrast, sharpen, blackLevel, whiteLevel,
+                             output);
+            output.device_sync();
+        });
+    fprintf(stderr, "Halide (cuda):\t%gus\n", best * 1e6); 
 
     fprintf(stderr, "output: %s\n", argv[7]);
     convert_and_save_image(output, argv[7]);
