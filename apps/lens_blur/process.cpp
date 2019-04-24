@@ -2,6 +2,7 @@
 #include <chrono>
 
 #include "lens_blur.h"
+#include "lens_blur_gpu.h"
 #include "lens_blur_auto_schedule.h"
 
 #include "halide_benchmark.h"
@@ -20,6 +21,9 @@ int main(int argc, char **argv) {
 
     Buffer<uint8_t> left_im = load_image(argv[1]);
     Buffer<uint8_t> right_im = load_image(argv[1]);
+
+    printf("Input image size: %d x %d\n", left_im.width(), left_im.height());
+
     uint32_t slices = atoi(argv[2]);
     uint32_t focus_depth = atoi(argv[3]);
     float blur_radius_scale = atof(argv[4]);
@@ -45,6 +49,14 @@ int main(int argc, char **argv) {
                                 blur_radius_scale, aperture_samples, output);
     });
     printf("Auto-scheduled time: %gms\n", min_t_auto * 1e3);
+
+    // GPU version
+    double min_t_gpu = benchmark(timing_iterations, 10, [&]() {
+        lens_blur_gpu(left_im, right_im, slices, focus_depth,
+                      blur_radius_scale, aperture_samples, output);
+    });
+    output.copy_to_host();
+    printf("GPU time:%gms\n", min_t_gpu * 1e3);
 
     convert_and_save_image(output, argv[7]);
 
