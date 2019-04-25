@@ -2,6 +2,7 @@
 #include <chrono>
 
 #include "local_laplacian.h"
+#include "local_laplacian_gpu.h"
 #ifndef NO_AUTO_SCHEDULE
 #include "local_laplacian_auto_schedule.h"
 #endif
@@ -22,6 +23,7 @@ int main(int argc, char **argv) {
 
     // Input may be a PNG8
     Buffer<uint16_t> input = load_and_convert_image(argv[1]);
+    printf("Image size: %d x %d\n", input.width(), input.height());
 
     int levels = atoi(argv[2]);
     float alpha = atof(argv[3]), beta = atof(argv[4]);
@@ -45,6 +47,12 @@ int main(int argc, char **argv) {
     });
     printf("Auto-scheduled time: %gms\n", best_auto * 1e3);
     #endif
+
+    double best_gpu = benchmark(timing, 1, [&]() {
+        local_laplacian_gpu(input, levels, alpha/(levels-1), beta, output);
+    });
+    output.copy_to_host();
+    printf("GPU time: %gms\n", best_gpu * 1e3);
 
     convert_and_save_image(output, argv[6]);
 
