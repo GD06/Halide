@@ -2,6 +2,7 @@
 #include <chrono>
 
 #include "stencil_chain.h"
+#include "stencil_chain_gpu.h"
 #ifndef NO_AUTO_SCHEDULE
 #include "stencil_chain_auto_schedule.h"
 #endif
@@ -45,6 +46,12 @@ int main(int argc, char **argv) {
     });
     printf("Auto-scheduled time: %gms\n", best_auto * 1e3);
     #endif
+
+    double best_gpu = benchmark(timing, 1, [&](){
+        stencil_chain_gpu(input, output);
+    });
+    output.copy_to_host();
+    printf("GPU time: %gms\n", best_gpu * 1e3);
 
     convert_and_save_image(output, argv[3]);
 

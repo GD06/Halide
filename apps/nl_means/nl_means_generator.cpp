@@ -85,7 +85,7 @@ public:
             non_local_means.estimate(x, 0, 614)
                 .estimate(y, 0, 1024)
                 .estimate(c, 0, 3);
-        } /*else if (get_target().has_gpu_feature()) {
+        } else if (get_target().has_gpu_feature()) {
             // TODO: the GPU schedule is currently using to much shared memory
             // because the simplifier can't simplify the expr (it can't cancel
             // the 'x' term in min(((a + (x + b)) + c) - min(x + d + e))) so
@@ -107,7 +107,7 @@ public:
                 .update()
                 .reorder(x, y, c, s_dom.x, s_dom.y)
                 .gpu_threads(x, y);
-        }*/ else {
+        } else {
             non_local_means.compute_root()
                 .reorder(c, x, y)
                 .tile(x, y, tx, ty, x, y, 16, 8)

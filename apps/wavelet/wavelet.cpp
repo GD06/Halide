@@ -6,6 +6,7 @@
 #include "inverse_daubechies_x.h"
 
 #include "HalideBuffer.h"
+#include "halide_benchmark.h"
 #include "halide_image_io.h"
 
 using namespace Halide::Runtime;
@@ -58,20 +59,52 @@ int main(int argc, char **argv) {
     const std::string dirname = argv[2];
 
     Buffer<float> input = load_and_convert_image(src_image);
+    printf("Image image size: %d x %d\n", input.width(), input.height());
+
     Buffer<float> transformed(input.width()/2, input.height(), 2);
     Buffer<float> inverse_transformed(input.width(), input.height());
 
+    const int timing_iterations = 10;
+
     _assert(haar_x(input, transformed) == 0, "haar_x failed");
+    transformed.copy_to_host();
     save_transformed(transformed, dirname + "/haar_x.png");
 
+    double t_haar_x = benchmark(timing_iterations, 1, [&](){
+        haar_x(input, transformed);
+    });
+    transformed.copy_to_host();
+    printf("haar_x time: %gms\n", t_haar_x * 1e3);
+
     _assert(inverse_haar_x(transformed, inverse_transformed) == 0, "inverse_haar_x failed");
+    inverse_transformed.copy_to_host();
     save_untransformed(inverse_transformed, dirname + "/inverse_haar_x.png");
 
+    double t_inverse_haar_x = benchmark(timing_iterations, 1, [&](){
+        inverse_haar_x(transformed, inverse_transformed);
+    });
+    inverse_transformed.copy_to_host();
+    printf("inverse_haar_x time: %gms\n", t_inverse_haar_x * 1e3);
+
     _assert(daubechies_x(input, transformed) == 0, "daubechies_x failed");
+    transformed.copy_to_host();
     save_transformed(transformed, dirname + "/daubechies_x.png");
 
+    double t_daubechies_x = benchmark(timing_iterations, 1, [&](){
+        daubechies_x(input, transformed);
+    });
+    transformed.copy_to_host();
+    printf("daubechies_x time: %gms\n", t_daubechies_x * 1e3);
+
     _assert(inverse_daubechies_x(transformed, inverse_transformed) == 0, "inverse_daubechies_x failed");
+    inverse_transformed.copy_to_host();
     save_untransformed(inverse_transformed, dirname + "/inverse_daubechies_x.png");
+
+    double t_inverse_daubenchies_x = benchmark(timing_iterations, 1, [&](){
+        inverse_daubechies_x(transformed, inverse_transformed);
+    });
+    inverse_transformed.copy_to_host();
+    printf("inverse_daubechies_x time: %gms\n", t_inverse_daubenchies_x * 1e3);
 
     printf("Done.\n");
     return 0;

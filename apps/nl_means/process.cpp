@@ -3,6 +3,7 @@
 
 #include "nl_means.h"
 #include "nl_means_auto_schedule.h"
+#include "nl_means_gpu.h"
 
 #include "halide_benchmark.h"
 #include "HalideBuffer.h"
@@ -19,6 +20,8 @@ int main(int argc, char **argv) {
     }
 
     Buffer<float> input = load_and_convert_image(argv[1]);
+    printf("Input image size: %d x %d\n", input.width(), input.height()); 
+
     int patch_size = atoi(argv[2]);
     int search_area = atoi(argv[3]);
     float sigma = atof(argv[4]);
@@ -43,6 +46,13 @@ int main(int argc, char **argv) {
         nl_means_auto_schedule(input, patch_size, search_area, sigma, output);
     });
     printf("Auto-scheduled time: %gms\n", min_t_auto * 1e3);
+
+
+    double min_t_gpu = benchmark(timing_iterations, 1, [&]() {
+        nl_means_gpu(input, patch_size, search_area, sigma, output);
+    });
+    output.copy_to_host();
+    printf("GPU time: %gms\n", min_t_gpu * 1e3);
 
     convert_and_save_image(output, argv[6]);
 

@@ -9,6 +9,9 @@ public:
     Input<Buffer<uint16_t>> input{"input", 2};
     Output<Buffer<uint16_t>> output{"output", 2};
 
+    GeneratorParam<int> tile_x{"tile_x", 32}; // X tile
+    GeneratorParam<int> tile_y{"tile_y", 8}; // Y tile
+
     void generate() {
 
         std::vector<Func> stages;
@@ -42,6 +45,17 @@ public:
             // Provide estimates on the pipeline output
             output.estimate(x, 0, width)
                 .estimate(y, 0, height);
+        } else if (get_target().has_gpu_feature()) {
+            Var xi, yi, y_inner;
+            for (size_t i = 1; i < stages.size() - 1; i++) {
+                Func s = stages[i];
+                s.compute_root()
+                    .split(y, y, y_inner, tile_y).reorder(y_inner, x).unroll(y_inner)
+                    .gpu_tile(x, y, xi, yi, tile_x, 1);
+            }
+            output.split(y, y, y_inner, tile_y).reorder(y_inner, x).unroll(y_inner)
+                .gpu_tile(x, y, xi, yi, tile_x, 1);
+            //output.gpu_tile(x, y, xi, yi, tile_x, tile_y);
         } else {
             // CPU schedule. No fusion.
             Var yi, yo, xo, xi, t;

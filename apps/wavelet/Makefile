@@ -20,7 +20,7 @@ $(BIN)/%.generator: %_generator.cpp $(GENERATOR_DEPS)
 $(BIN)/%.a $(BIN)/%.h: $(BIN)/%.generator
 	@echo Running Generator $<
 	@mkdir -p $(@D)
-	@$< -g $(notdir $*) -o $(BIN) target=$(HL_TARGET)-no_runtime
+	@$< -g $(notdir $*) -o $(BIN) target=cuda 
 
 $(BIN)/runtime_$(HL_TARGET).a: $(BIN)/haar_x.generator
 	@echo Compiling Halide runtime for target $(HL_TARGET)
@@ -31,8 +31,8 @@ HL_MODULES = \
 	$(BIN)/daubechies_x.a \
 	$(BIN)/haar_x.a \
 	$(BIN)/inverse_daubechies_x.a \
-	$(BIN)/inverse_haar_x.a \
-	$(BIN)/runtime_$(HL_TARGET).a
+	$(BIN)/inverse_haar_x.a 
+	#$(BIN)/runtime_$(HL_TARGET).a
 
 $(BIN)/wavelet.a: wavelet.cpp $(HL_MODULES)
 	@$(CXX) $(CXXFLAGS) $(IMAGE_IO_CXX_FLAGS) -I$(BIN) -c $< -o $@

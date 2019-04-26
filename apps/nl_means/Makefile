@@ -16,7 +16,11 @@ $(BIN)/nl_means_auto_schedule.a: $(BIN)/nl_means.generator
 	@-mkdir -p $(BIN)
 	$^ -g nl_means -o $(BIN) -f nl_means_auto_schedule target=$(HL_TARGET)-no_runtime auto_schedule=true
 
-$(BIN)/process: process.cpp $(BIN)/nl_means.a $(BIN)/nl_means_auto_schedule.a
+$(BIN)/nl_means_gpu.a: $(BIN)/nl_means.generator 
+	@-mkdir -p $(BIN)
+	$^ -g nl_means -o $(BIN) -f nl_means_gpu target=cuda auto_schedule=false 
+
+$(BIN)/process: process.cpp $(BIN)/nl_means.a $(BIN)/nl_means_auto_schedule.a $(BIN)/nl_means_gpu.a 
 	@-mkdir -p $(BIN)
 	$(CXX) $(CXXFLAGS) -I$(BIN) -Wall -O3 $^ -o $@ $(LDFLAGS) $(IMAGE_IO_FLAGS) $(CUDA_LDFLAGS) $(OPENCL_LDFLAGS) $(OPENGL_LDFLAGS)
 
