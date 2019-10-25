@@ -294,7 +294,8 @@ int main(int argc, char **argv) {
         if (target.os == Target::OSX) {
             target.set_feature(Target::Metal);
         } else {
-            target.set_feature(Target::OpenCL);
+            // target.set_feature(Target::OpenCL);
+            target.set_feature(Target::CUDA);
         }
 
         // Create an interesting input image to use.
